@@ -1,11 +1,24 @@
 from flask import Flask, render_template, redirect, g, request, url_for
 import sqlite3
-from api import app as api_app
+from flask_restful import Resource, Api
 
 DATABASE = 'todolist.db'
 
 app = Flask(__name__)
 app.config.from_object(__name__)
+api = Api(app)
+
+
+class ToDoListResource(Resource):
+    def get(self):
+        db = get_db()
+        cur = db.execute('SELECT what_to_do, due_date, status FROM entries')
+        entries = cur.fetchall()
+        tdlist = [dict(what_to_do=row[0], due_date=row[1], status=row[2]) for row in entries]
+        return tdlist
+
+
+api.add_resource(ToDoListResource, '/api/items')
 
 
 @app.route("/")
@@ -13,8 +26,7 @@ def show_list():
     db = get_db()
     cur = db.execute('SELECT what_to_do, due_date, status FROM entries')
     entries = cur.fetchall()
-    tdlist = [dict(what_to_do=row[0], due_date=row[1], status=row[2])
-              for row in entries]
+    tdlist = [dict(what_to_do=row[0], due_date=row[1], status=row[2]) for row in entries]
     return render_template('index.html', todolist=tdlist)
 
 
